@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RASYO-GATE</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111;
+      --panel: rgba(20, 20, 20, 0.88);
+      --text: #f7f4ee;
+      --muted: #b9b1a5;
+      --line: rgba(255, 255, 255, 0.16);
+      --accent: #d8b46a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      overflow: hidden;
+    }
+
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 54px;
+      padding: 10px 16px;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.86), rgba(0, 0, 0, 0.42), transparent);
+      pointer-events: none;
+    }
+
+    .back {
+      pointer-events: auto;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+    }
+
+    .title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 650;
+      letter-spacing: 0;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+    }
+
+    .counter {
+      flex: 0 0 auto;
+      min-width: 72px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      pointer-events: auto;
+    }
+
+    .viewer {
+      height: 100dvh;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      padding: 64px 0 34px;
+      scrollbar-color: var(--accent) #27221a;
+      scrollbar-width: thin;
+    }
+
+    .page {
+      flex: 0 0 100%;
+      height: calc(100dvh - 112px);
+      display: grid;
+      place-items: center;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+    }
+
+    .page img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      background: #050505;
+      box-shadow: 0 10px 34px rgba(0, 0, 0, 0.52);
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .nav {
+      position: fixed;
+      inset: auto 0 16px;
+      z-index: 6;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    button {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--panel);
+      color: var(--text);
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        gap: 8px;
+        padding-inline: 10px;
+      }
+
+      .back {
+        font-size: 12px;
+        padding-inline: 8px;
+      }
+
+      .title {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="back" href="../">一覧</a>
+    <div class="title">RASYO-GATE</div>
+    <div class="counter" id="counter">1 / 14</div>
+  </header>
+
+  <main class="viewer" id="viewer" aria-label="漫画ビューア"></main>
+
+  <nav class="nav" aria-label="ページ移動">
+    <button id="prev" type="button" aria-label="前のページ">‹</button>
+    <button id="next" type="button" aria-label="次のページ">›</button>
+  </nav>
+
+  <script>
+    const imageFiles = [
+      "page_00.png",
+      "page_001.png",
+      "page_002.png",
+      "page_003.png",
+      "page_004.png",
+      "page_005.png",
+      "page_006.png",
+      "page_007.png",
+      "page_008.png",
+      "page_009.png",
+      "page_010.png",
+      "page_011.png",
+      "page_012.png",
+      "page_013.png"
+    ];
+    const viewer = document.getElementById("viewer");
+    const counter = document.getElementById("counter");
+
+    imageFiles.forEach((fileName, index) => {
+      const page = document.createElement("section");
+      page.className = "page";
+
+      const img = document.createElement("img");
+      img.src = encodeURI(fileName);
+      img.alt = fileName.replace(/\.[^.]+$/, "");
+      img.loading = index < 2 ? "eager" : "lazy";
+
+      page.appendChild(img);
+      viewer.appendChild(page);
+    });
+
+    function nearestPageIndex() {
+      const center = viewer.scrollLeft + viewer.clientWidth / 2;
+      const pages = [...viewer.querySelectorAll(".page")];
+      let best = 0;
+      let distance = Infinity;
+
+      pages.forEach((page, index) => {
+        const pageCenter = page.offsetLeft + page.clientWidth / 2;
+        const nextDistance = Math.abs(center - pageCenter);
+        if (nextDistance < distance) {
+          distance = nextDistance;
+          best = index;
+        }
+      });
+
+      return best;
+    }
+
+    function updateCounter() {
+      counter.textContent = `${nearestPageIndex() + 1} / ${imageFiles.length}`;
+    }
+
+    function go(delta) {
+      const pages = [...viewer.querySelectorAll(".page")];
+      const nextIndex = Math.max(0, Math.min(imageFiles.length - 1, nearestPageIndex() + delta));
+      pages[nextIndex].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+
+    document.getElementById("prev").addEventListener("click", () => go(-1));
+    document.getElementById("next").addEventListener("click", () => go(1));
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft") go(-1);
+      if (event.key === "ArrowRight") go(1);
+    });
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    viewer.addEventListener("touchstart", (event) => {
+      const touch = event.changedTouches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+    }, { passive: true });
+
+    viewer.addEventListener("touchend", (event) => {
+      const touch = event.changedTouches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+      const isHorizontalSwipe = Math.abs(deltaX) > 54 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4;
+
+      if (!isHorizontalSwipe) {
+        return;
+      }
+
+      if (deltaX > 0) {
+        go(1);
+      } else {
+        go(-1);
+      }
+    }, { passive: true });
+
+    viewer.addEventListener("wheel", (event) => {
+      if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+        event.preventDefault();
+        viewer.scrollLeft += event.deltaY;
+      }
+    }, { passive: false });
+
+    viewer.addEventListener("scroll", () => {
+      window.requestAnimationFrame(updateCounter);
+    }, { passive: true });
+  </script>
+</body>
+</html>

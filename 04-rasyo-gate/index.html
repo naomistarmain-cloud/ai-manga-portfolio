@@ -233,12 +233,12 @@
       updateCounter(nextIndex);
     }
 
-    document.getElementById("prev").addEventListener("click", () => go(-1));
-    document.getElementById("next").addEventListener("click", () => go(1));
+    document.getElementById("prev").addEventListener("click", () => go(1));
+    document.getElementById("next").addEventListener("click", () => go(-1));
 
     window.addEventListener("keydown", (event) => {
-      if (event.key === "ArrowLeft") go(-1);
-      if (event.key === "ArrowRight") go(1);
+      if (event.key === "ArrowLeft") go(1);
+      if (event.key === "ArrowRight") go(-1);
     });
 
     let touchStartX = 0;
